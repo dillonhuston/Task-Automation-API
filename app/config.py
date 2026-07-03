@@ -3,7 +3,16 @@
 import os
 from dotenv import load_dotenv
 
+
+
 load_dotenv()
 
-SECRET_KEY = os.getenv("SECRET_KEY", "fallback-secret")
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite://dev.db")
+class Config:
+    #TODO this also should not be os, as some people might deploy to different systems. ALso to impot BaseSettings for FastAPI use
+
+    SECRET_KEY = os.getenv("SECRET_KEY", "fallback-secret")
+    DATABASE_URL = os.getenv("DATABASE_URL", "sqlite://dev.db")
+    TOKEN_FILE = os.getenv("TOKEN_FILE", "")
+    POLL_INTERVAL = os.getenv("POLL_INTERVAL", "10") # In seconds 
+    HOST = os.getenv("HOST")
+
