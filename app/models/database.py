@@ -1,26 +1,28 @@
-"""Database setup and engine creation."""
-
 import os
 from dotenv import load_dotenv
-from sqlalchemy import create_engine
-from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
+from sqlalchemy.orm import declarative_base
 
 load_dotenv()
-# fix this for live backend
-DATABASE_URL = os.getenv("DATABASE_URL")
-if not DATABASE_URL:
-    raise RuntimeError("DATABASE_URL must be set — SQLite is not supported on Fly.io")
+
+
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./dev.db")
 
 Base = declarative_base()
-engine = create_engine(DATABASE_URL, echo=False)
 
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+engine = create_async_engine(DATABASE_URL, echo=False)
 
+AsyncSessionLocal = async_sessionmaker(
+    bind=engine, 
+    autocommit=False, 
+    autoflush=False, 
+    class_=AsyncSession
+)
 
-def get_db():
-    """yield database session and make sure its closed"""
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+async def get_db():
+    # async generator to yield database session
+    async with AsyncSessionLocal() as db:
+        try:
+            yield db
+        finally:
+            await db.close()
