@@ -5,6 +5,8 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 logger = SingletonLogger().get_logger()
 
+#TODO remove all db operations into one file instead of doing so within this function. Also add any encrpytion key operations into a service that handles this alone. Also add pydantic
+#TODO add dependency injections 
 class KeyHandler:
 
     @staticmethod

@@ -18,6 +18,8 @@ logger = SingletonLogger().get_logger()
     Security: We cant just put our encryption and decryption in with our api route, youd be hakced in the first hour, with passwint raw bytes over network. Big NONO 
 
 """
+
+#TODO clean OOP these should not be a static method and also start adding pydantic. remove all useless excption and replace with global handler deriving from custom exceptions
 class EncryptionService():
     @staticmethod
     def encrypt(file_path: str, user_id: str, db: Session):
@@ -30,7 +32,7 @@ class EncryptionService():
         
         if len(key) != 32:
             raise Exception("Invalid key length (must be 32 bytes for AES-256)")
-
+        #TODO remove these actions into a service of its own. We should not be opening files and encrypting in the same file
         # Read plaintext
         with open(file_path, 'rb') as f:
             data = f.read()
@@ -50,6 +52,7 @@ class EncryptionService():
     @staticmethod
     def decrypt(file_path: str, user_id: str, db: Session, nonce)-> bytes:
         """Again need to add some error handlers here"""
+        #TODO Same here, remove all file handling operations and encryption from this function 
         key = KeyHandler.getKey(user_id, db)
         try:
             with open(file_path,'rb')as f:

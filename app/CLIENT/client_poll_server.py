@@ -6,11 +6,13 @@ from app.dependencies.constants import TASK_STATUS_SCHEDULED
 from app.models.database import SessionLocal
 from app.models.tasks import TaskHistory
 
+
+#TODO Remove this and add them to config deriving from env
 HOST = "http://localhost:8000"
 TOKEN_FILE = r"C:\Users\amazo\Desktop\Projects\Network_monitor\Task-Automation-API\Task-Automation-API\app\CLIENT\token.txt"
 POLL_INTERVAL = 10  # seconds
 
-
+#TODO make this a classs
 def load_token(token_path: str) -> str | None:
     """Load API token from file."""
     try:

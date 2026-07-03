@@ -17,6 +17,8 @@ from ..utils.logger import SingletonLogger
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
 
 
+#TODO Remove all db calls, create this as a class service, also remove the fastapi HTTP constants and exception add global handlers instead of FastAPI default
+
 def get_logger():
     """Return a singleton logger instance."""
     return SingletonLogger().get_logger()
@@ -43,7 +45,7 @@ async def get_current_user(
                 status_code=HTTP_STATUS_UNAUTHORIZED,
                 detail="Invalid authentication token"
             )
-
+        #TODO remove ALL these db calls 
         user = db.query(UserModel).filter(UserModel.id == user_id).first()
         if not user:
             logger.warning("User not found in DB for ID %s", user_id)

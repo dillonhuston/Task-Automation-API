@@ -4,10 +4,12 @@ host = 'http://127.0.0.1:8000'
 
 
 # poll server
+#TODO Remove this, what the hell was i thinking a year ago ...
+
 
 TOKEN_FILE = r"C:\Users\amazo\Desktop\Projects\Network_monitor\Task-Automation-API\Task-Automation-API\app\CLIENT\token.txt"
 
-
+#TODO make this ClientPollServices. 
 def signup(email, password, username):
     data = {"email": email, "password": password, "username": username}
     r = requests.post(f"{host}/auth/register", json=data)
@@ -34,7 +36,9 @@ def login(email, password):
 def create_task(task_type, schedule_time, receiver_email, title):
     print("Creating task")
     try:
+        #TODO remove this also wow
         with open(r"C:\Users\amazo\Desktop\Projects\Network_monitor\Task-Automation-API\Task-Automation-API\app\CLIENT\token.txt") as f:
+            #TODO big no remove this 
             token = f.read().strip()
             print("Found token")
     except FileNotFoundError:
@@ -49,6 +53,8 @@ def create_task(task_type, schedule_time, receiver_email, title):
         "title": title
     }
 
+    # Why am i defining this?
+
     url = f"{host}/schedule"
 
     try:
@@ -62,6 +68,7 @@ def create_task(task_type, schedule_time, receiver_email, title):
 
     try:
         resp = r.json()
+        # add real error eception using custom exceptions 
     except Exception:
         resp = r.text  # fallback
 
