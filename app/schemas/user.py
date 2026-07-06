@@ -16,6 +16,13 @@ class UserLogin(BaseModel):
     username: str
     password: str
 
+class UserLoginSuccess(BaseModel):
+    id: str
+    username: str
+    email: str
+    access_token: str
+    token_type: str
+
 
 class User(BaseModel):
     """Schema for returning user data"""
