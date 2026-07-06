@@ -1,6 +1,6 @@
 from app.Database.DatabaseOperations import DatabaseOperations
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.schemas.user import UserCreate
+from app.schemas.user import UserCreate, UserLogin
 from app.models.user import UserModel
 
 
@@ -18,7 +18,7 @@ class UserService():
 
     async def register_user(self, db: AsyncSession, user: UserCreate):
 
-        if await self.dboperations.GetUserByUsername(db,user.username):
+        if await self.dboperations.GetUserByUsername(db, str(user.username)):
             raise ValueError("User already exists") #TODO add custom exception handle 
         
         hashed_password = self.authservice.hash_password(user.password)
@@ -26,10 +26,12 @@ class UserService():
         new_user = UserModel(
             username = user.username,
             email = user.email,
-            password = hashed_password)
+            hashed_password = hashed_password)
         
         return await self.dboperations.AddUser(db, new_user)
-            
+    
+
+
 
 
 

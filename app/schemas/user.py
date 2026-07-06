@@ -4,13 +4,17 @@ Schemas for user-related data models.
 
 from pydantic import BaseModel
 
-
+# This is the inputs needed for registeing a user 
 class UserCreate(BaseModel):
     """Schema for creating a user."""
     username: str
     email: str
     password: str
-    is_admin: bool = False
+
+
+class UserLogin(BaseModel):
+    username: str
+    password: str
 
 
 class User(BaseModel):

@@ -6,11 +6,11 @@ from sqlalchemy.orm import declarative_base
 load_dotenv()
 
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./dev.db")
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./dev.db")
 
 Base = declarative_base()
 
-engine = create_async_engine(DATABASE_URL, echo=False)
+engine =  create_async_engine(DATABASE_URL, echo=False)
 
 AsyncSessionLocal = async_sessionmaker(
     bind=engine, 
@@ -20,7 +20,6 @@ AsyncSessionLocal = async_sessionmaker(
 )
 
 async def get_db():
-    # async generator to yield database session
     async with AsyncSessionLocal() as db:
         try:
             yield db
