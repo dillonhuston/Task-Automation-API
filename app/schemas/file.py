@@ -1,5 +1,16 @@
 from pydantic import BaseModel
+from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
+
+
+class FileSave(BaseModel):
+
+    original_filename:str
+    user_id:str
+    file_path: str
+    file_hash: str
+    nonce: bytes
+
 
 """Schema for returning files"""
 class FileResponse(BaseModel):
@@ -11,5 +22,8 @@ class FileResponse(BaseModel):
 class FileUploadRequest(BaseModel):
     filename: str
     file_hash: Optional[str] = None
+
+
+
 
 __all__ = ["FileResponse", "FileUploadRequest"]
