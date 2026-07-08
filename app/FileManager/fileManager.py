@@ -1,65 +1,53 @@
 from fastapi import Depends, UploadFile, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.database import get_db
 from app.FileManager.fileOperations import fileOperations
 from app.Encryption_Services.encryptionService import EncryptionService
-from app.FileManager.databaseManager import saveToDatabase
+from app.Database.DatabaseOperations import DatabaseOperations
 from app.FileHash.API.HashFile import HashHandler
 from app.utils.logger import SingletonLogger
+
+from app.schemas.file import FileSave
 import os
 
 
 """gotta make this a celery process or seperate thread"""
 class fileManager:
-    def __init__(self, db: Session = Depends(get_db)):
+    def __init__(self, db: AsyncSession = Depends(get_db)):
         self.db = db
+        self.dboperation = DatabaseOperations()
         self.encryption = EncryptionService()
+        self.fileoperations = fileOperations()
+        self.logger = SingletonLogger().get_logger()
 
     async def uploadFile(self, user_id: str, file: UploadFile):  
-        logger = SingletonLogger().get_logger()
         try:
-            fileOperations.validate_file(file)
-
-            filename, file_path = fileOperations.save_file(file, user_id)
-            logger.info("File successfully saved to disk: %s", file_path)
-
-            if not os.path.exists(file_path):
-                raise HTTPException(status_code=500, detail="Saved file not found on disk")
-
+            self.fileoperations.validate_file(file)
+            # File operations now manages open/close inside save_file
+            filename, file_path = self.fileoperations.save_file(file, user_id)
+            
             file_hash = HashHandler(file_path).hash_file()
-            logger.info("File hash computed: %s", file_hash)
+            nonce = self.encryption.encrypt(file_path=file_path, user_id=user_id, db=self.db)
 
-            nonce = self.encryption.encrypt(
-                file_path=file_path,
-                user_id=user_id,
-                db=self.db
-            )
-
-            if nonce is None:
-                logger.error("Encryption failed: nonce is None")
-                raise HTTPException(status_code=500, detail="Encryption failed")
-
-            logger.info("Encryption successful, nonce length: %d bytes", len(nonce))
-
-            new_file = saveToDatabase(
+            file_data = FileSave(
                 original_filename=file.filename or "unnamed_file",
                 user_id=user_id,
                 file_path=file_path,
                 file_hash=file_hash,
-                db=self.db,
                 nonce=nonce
             )
 
-            logger.info("File metadata saved to DB - ID: %s", new_file.id)
+            # DatabaseOperations now handles the creation of the FileModel
+            saved_file = await self.dboperation.AddFile(self.db, file_data)
 
             return {
-                "id": new_file.id,
-                "filename": filename,
-                "file_path": file_path,
-                "file_hash": file_hash if isinstance(file_hash, str) else file_hash.hex(),
-                "nonce": nonce.hex()
+                "id": saved_file.id,
+                "filename": saved_file.filename,
+                "file_path": saved_file.file_path,
+                "file_hash": saved_file.file_hash,
+                "nonce": saved_file.nonce
             }
 
         except Exception as e:
-            logger.exception("Upload failed with unexpected exception: %s", e)
-            raise HTTPException(status_code=500, detail="Upload processing failed") from e
+            self.logger.exception("Upload failed: %s", e)
+            raise HTTPException(status_code=500, detail="Upload processing failed")
