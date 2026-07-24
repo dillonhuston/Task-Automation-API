@@ -6,13 +6,20 @@ import os
 from datetime import datetime
 from fastapi import UploadFile, HTTPException, status
 from app.utils.logger import SingletonLogger
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.dependencies.constants import MAX_UPLOAD_SIZE_MB
+
+from app.Database.DatabaseOperations import DatabaseOperations
 
 #base dir is for docker container volume
 BASE_DIR = "/app/uploads"
 logger = SingletonLogger().get_logger()
 
+
 class fileOperations():
+    def __init__(self, dboperations: DatabaseOperations = DatabaseOperations()):
+        self.dboperation = dboperations
+
     def save_file(file: UploadFile, user_id: str) -> tuple[str, str]:
         """
         Save uploaded file to disk with a unique name.
@@ -75,5 +82,18 @@ class fileOperations():
                 detail="Failed to validate file size.",
             ) from exc
 
+    async def list_files(self, db: AsyncSession, user_id: str):
+        files = await self.dboperation.ReturnUserFiles(db, user_id)
+        if not files:
+            raise ValueError(f"No files can be found for {user_id}")
+        return [
+            {
+            "id": f.id,
+            "filename": f.filename,
+            "filepath": f.file_path,
+            "file_hash": f.file_hash
 
 
+            }
+            for f in files
+        ]

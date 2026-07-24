@@ -12,6 +12,11 @@ class DatabaseOperations():
         user =  result.scalar_one_or_none() 
         return user
 
+    async def GetUserByID(self, db: AsyncSession, user_id: str):
+        result = await db.execute(select(UserModel).where(UserModel.id == user_id))
+        user = result.scalar_one_or_none()
+        return user
+
     async def GetFileByID(self, db: AsyncSession, file_id: str):
         result = await db.execute(select(FileModel).where(FileModel.id == file_id))
         file = result.scalar_one_or_none()
@@ -37,4 +42,9 @@ class DatabaseOperations():
         await db.commit()
         await db.refresh(new_file)
         return new_file
-        
+
+
+    async def ReturnUserFiles(self, db: AsyncSession, user_id: str):
+        result = await db.execute(select(FileModel).where(FileModel.user_id == user_id))
+        files = result.scalars().all()
+        return files

@@ -6,15 +6,17 @@ Provides get_current_user and admin_required dependencies.
 import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.Database.DatabaseOperations import DatabaseOperations
+from app.dependencies.dependency import get_jwt_handler, get_database_operations
+from app.auth.jwt import JWTHandler
 
-from ..auth.auth import verify_token
 from ..dependencies.constants import HTTP_STATUS_UNAUTHORIZED
 from ..models.database import get_db
 from ..models.user import UserModel
 from ..utils.logger import SingletonLogger
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 
 #TODO Remove all db calls, create this as a class service, also remove the fastapi HTTP constants and exception add global handlers instead of FastAPI default
@@ -25,28 +27,25 @@ def get_logger():
 
 
 async def get_current_user(
+    jwthandler: JWTHandler = Depends(get_jwt_handler),
+    databaseops: DatabaseOperations = Depends(get_database_operations),
     token: str = Depends(oauth2_scheme),
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ) -> UserModel:
-    """
-    Retrieve the current user based on JWT token and DB lookup.
-    
-    Raises:
-        HTTPException: If token is invalid or user not found.
-    """
     logger = get_logger()
     try:
-        payload = verify_token(token)
-        user_id = payload.get("sub")
+        payload = await jwthandler.verify_token(token)
+        logger.info("JWT payload: sub=%s id=%s", payload.get("sub"), payload.get("id"))
 
-        if user_id is None:
-            logger.error("Token missing 'sub' user ID")
+        user_id = payload.get("id")
+        if not user_id:
+            logger.error("Token missing 'id' user ID")
             raise HTTPException(
                 status_code=HTTP_STATUS_UNAUTHORIZED,
                 detail="Invalid authentication token"
             )
-        #TODO remove ALL these db calls 
-        user = db.query(UserModel).filter(UserModel.id == user_id).first()
+
+        user = await databaseops.GetUserByID(db, user_id)
         if not user:
             logger.warning("User not found in DB for ID %s", user_id)
             raise HTTPException(
@@ -55,8 +54,9 @@ async def get_current_user(
             )
 
         return user
-    except jwt.InvalidTokenError as exc:
-        logger.error("Invalid token format")
+
+    except ValueError as exc:  # <-- MUST match JWTHandler.verify_token
+        logger.error("Token verification failed: %s", exc)
         raise HTTPException(
             status_code=HTTP_STATUS_UNAUTHORIZED,
             detail="Invalid token"

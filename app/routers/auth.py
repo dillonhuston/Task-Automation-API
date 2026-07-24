@@ -39,7 +39,7 @@ async def register(
 
 @router.post("/login", response_model=UserLoginSuccess, status_code=200)
 async def login(
-    user: UserLogin,
+    user: OAuth2PasswordRequestForm = Depends(),
     user_service: UserService = Depends(get_userservice),
     db: AsyncSession = Depends(get_db)):
 
