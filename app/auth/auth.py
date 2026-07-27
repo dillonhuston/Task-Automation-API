@@ -1,9 +1,6 @@
 """Authentication module for JWT token creation, verification, and password hashing."""
 
-from fastapi import HTTPException
-import jwt
-from ..auth import  pbkdf2_sha256
-from ..dependencies.constants import HTTP_STATUS_UNAUTHORIZED
+from passlib.hash import  pbkdf2_sha256
 from ..utils.logger import SingletonLogger
 
 from app.config import Config

@@ -30,7 +30,7 @@ class fileManager:
             nonce = self.encryption.encrypt(file_path=file_path, user_id=user_id, db=self.db)
 
             file_data = FileSave(
-                original_filename=file.filename or "unnamed_file",
+                original_filename=filename or "unnamed_file",
                 user_id=user_id,
                 file_path=file_path,
                 file_hash=file_hash,

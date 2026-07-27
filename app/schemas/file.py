@@ -23,6 +23,13 @@ class FileUploadRequest(BaseModel):
     filename: str
     file_hash: Optional[str] = None
 
+class Downloadfile(BaseModel):
+    data: bytes
+    media_type: str
+    original_filename:str
+
+    
+
 
 
 

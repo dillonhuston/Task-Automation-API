@@ -9,7 +9,7 @@ router = APIRouter(prefix="/files", tags=["Files"])
 
 @router.post("/upload", response_model=FileResponse)
 async def uploadfile(
-    file: UploadFile = File(...),
+    file: UploadFile = File(),
     user: UserModel = Depends(get_current_user),
     manager: fileManager = Depends()):
     

@@ -8,19 +8,26 @@ from fastapi import UploadFile, HTTPException, status
 from app.utils.logger import SingletonLogger
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.dependencies.constants import MAX_UPLOAD_SIZE_MB
-
+from app.Encryption_Services.encryptionService import EncryptionService
+from app.schemas.file import Downloadfile
 from app.Database.DatabaseOperations import DatabaseOperations
 
 #base dir is for docker container volume
-BASE_DIR = "/app/uploads"
+BASE_DIR = os.environ.get("BASE_DIR", "/tmp/uploads")
 logger = SingletonLogger().get_logger()
 
 
 class fileOperations():
-    def __init__(self, dboperations: DatabaseOperations = DatabaseOperations()):
+    def __init__(
+            self, 
+            dboperations: DatabaseOperations = DatabaseOperations(),
+            encryptionservice: EncryptionService = EncryptionService()
+            ):
+        
         self.dboperation = dboperations
+        self.encryptionservice = encryptionservice
 
-    def save_file(file: UploadFile, user_id: str) -> tuple[str, str]:
+    def save_file(self, file: UploadFile, user_id: str) -> tuple[str, str]:
         """
         Save uploaded file to disk with a unique name.
 
@@ -53,7 +60,7 @@ class fileOperations():
             ) from exc
 
 
-    def validate_file(file: UploadFile) -> None:
+    def validate_file(self,file: UploadFile) -> None:
         """
         Validate uploaded file size.
 
@@ -97,3 +104,46 @@ class fileOperations():
             }
             for f in files
         ]
+
+    async def download_file(self, db: AsyncSession,file_id: str, user_id: str):
+            file = await self.dboperation.GetFileByID(db,file_id)
+            if not file:
+                logger.warning("No file availabe for user, could be no files on db")
+                raise ValueError("NO file found for this user.")
+
+            try:
+                nonce_bytes = bytes.fromhex(file.nonce)
+                decryted_data = self.encryptionservice.decrypt(
+                    db,
+                    file_path=file.file_path,
+                    user_id=str(user_id),
+                    nonce=nonce_bytes
+                )
+
+                original_filename = file.filename or "downloaded_file"
+                
+                import mimetypes
+                media_type, _ = mimetypes.guess_type(original_filename)
+                if media_type is None:
+                    media_type = "application/octet-stream"
+
+                data = Downloadfile(
+                    original_filename = original_filename,
+                    data=decryted_data,
+                    media_type=media_type
+                )
+                return data
+
+
+            except Exception:
+                logger.error("Failed to download file or no key present.")
+                raise ValueError("Failed to decrypt/download file.")
+
+
+
+    
+    
+        
+        
+
+       
