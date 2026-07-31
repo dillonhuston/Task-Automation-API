@@ -13,4 +13,4 @@ async def uploadfile(
     user: UserModel = Depends(get_current_user),
     manager: fileManager = Depends()):
     
-    return await manager.uploadFile(str(user.id), file)
+    return await manager.uploadFile(user.id, file)

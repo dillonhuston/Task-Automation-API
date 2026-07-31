@@ -15,7 +15,6 @@ from app.services.user_service import UserService
 from app.dependencies.dependency import get_userservice
 from app.utils.logger import SingletonLogger
 
-from app.Encryption_Services.keyGenerator import KeyHandler
 
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
@@ -23,7 +22,6 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 
 logger = SingletonLogger().get_logger()
-handler = KeyHandler()
 
 @router.post("/register", response_model=User, status_code=201)
 async def register(
