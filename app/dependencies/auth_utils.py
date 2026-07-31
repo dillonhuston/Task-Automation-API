@@ -30,8 +30,7 @@ async def get_current_user(
     jwthandler: JWTHandler = Depends(get_jwt_handler),
     databaseops: DatabaseOperations = Depends(get_database_operations),
     token: str = Depends(oauth2_scheme),
-    db: AsyncSession = Depends(get_db)
-) -> UserModel:
+    db: AsyncSession = Depends(get_db)) -> UserModel:
     logger = get_logger()
     try:
         payload = await jwthandler.verify_token(token)
@@ -55,7 +54,7 @@ async def get_current_user(
 
         return user
 
-    except ValueError as exc:  # <-- MUST match JWTHandler.verify_token
+    except ValueError as exc:  
         logger.error("Token verification failed: %s", exc)
         raise HTTPException(
             status_code=HTTP_STATUS_UNAUTHORIZED,

@@ -15,4 +15,6 @@ class Config:
     TOKEN_FILE = os.getenv("TOKEN_FILE", "")
     POLL_INTERVAL = os.getenv("POLL_INTERVAL", "10") # In seconds 
     HOST = os.getenv("HOST")
+    BASE_DIR = os.environ.get("BASE_DIR")
+
 

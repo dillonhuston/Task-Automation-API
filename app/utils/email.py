@@ -15,7 +15,7 @@ from app.utils.celery_instance import celery_app
 from app.models.database import SessionLocal
 from app.utils.logger import SingletonLogger
 
-from app.Encryption_Services.encryptionService import EncryptionService
+from app.Encryption.encryptionService import EncryptionService
 from app.models.tasks import Task
 from app.models.file import FileModel
 from app.dependencies.constants import (

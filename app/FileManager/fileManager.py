@@ -5,16 +5,16 @@ from fastapi import Depends, UploadFile, HTTPException
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import Config
 from app.Database.DatabaseOperations import DatabaseOperations
-from app.Encryption_Services.encryptionService import EncryptionService
-from app.Encryption_Services.keyGenerator import KeyHandler
+from app.Encryption.encryptionService import EncryptionService
+from app.Encryption.keyGenerator import KeyHandler
 from app.FileManager.fileOperations import fileOperations
 from app.FileHash.API.HashFile import HashHandler
 from app.schemas.file import FileSave
 from app.models.database import get_db
 from app.utils.logger import SingletonLogger
 
-BASE_DIR = os.environ.get("BASE_DIR", "/tmp/uploads")
 logger = SingletonLogger().get_logger()
 
 
@@ -26,19 +26,19 @@ class fileManager:
         self.fileoperations = fileOperations(DatabaseOperations(), self.keyhandler)
         self.encryption = EncryptionService(KeyHandler, self.fileoperations)
         self.logger = SingletonLogger().get_logger()
+        self.config = Config()
 
     async def uploadFile(self, user_id: str, file: UploadFile):
         try:
             await self.fileoperations.validate_file(file)
 
-            os.makedirs(BASE_DIR, exist_ok=True)
+            os.makedirs(self.config.BASE_DIR, exist_ok=True)
             filename = f"{user_id}_{datetime.now(tz=timezone.utc):%Y-%m-%d_%H-%M-%S}_{file.filename}"
-            file_path = os.path.join(BASE_DIR, filename)
+            file_path = os.path.join(self.config.BASE_DIR, filename)
 
             file.file.seek(0)
             plaintext = await file.read()
 
-            # write plaintext to disk so HashHandler(file_path) can work
             with open(file_path, "wb") as f:
                 f.write(plaintext)
 

@@ -1,17 +1,28 @@
 import uuid
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, update
 from app.models.user import UserModel
 from app.models.file import FileModel
 from app.schemas.file import FileSave
 class DatabaseOperations():
 
+
+
+    """User operations"""
     async def GetUserByUsername(self, db: AsyncSession, username: str)-> UserModel:
         result = await db.execute(select(UserModel).where(UserModel.username == username))
         user =  result.scalar_one_or_none() 
         return user
 
+
+    async def AddUser(self, db: AsyncSession, user: UserModel):
+            db.add(user)
+            await db.commit()
+            await db.refresh(user)
+            return user
+
+    """ FIle operations"""
     async def GetUserByID(self, db: AsyncSession, user_id: str):
         result = await db.execute(select(UserModel).where(UserModel.id == user_id))
         user = result.scalar_one_or_none()
@@ -22,12 +33,7 @@ class DatabaseOperations():
         file = result.scalar_one_or_none()
         return file
 
-    async def AddUser(self, db: AsyncSession, user: UserModel):
-        db.add(user)
-        await db.commit()
-        await db.refresh(user)
-        return user
-
+ 
     async def AddFile(self, db: AsyncSession, file_data: FileSave):
         new_file = FileModel(
             id=str(uuid.uuid4()),
@@ -48,3 +54,13 @@ class DatabaseOperations():
         result = await db.execute(select(FileModel).where(FileModel.user_id == user_id))
         files = result.scalars().all()
         return files
+
+    """Encryption related"""
+
+
+    async def AddUserKey(self, db: AsyncSession, user_id: str, key_hex: str):
+         cmd = (update(UserModel).where(UserModel.id == user_id)).values(encryption_key=key_hex)
+         result = await db.execute(cmd)
+         await db.commit()
+         return result.rowcount    
+         

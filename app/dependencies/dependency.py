@@ -1,7 +1,7 @@
 from app.Database.DatabaseOperations import DatabaseOperations
 from app.auth.auth import AuthService
-from app.Encryption_Services.keyGenerator import KeyHandler
-
+from app.Encryption.keyGenerator import KeyHandler
+from app.Encryption.encryptionService import EncryptionService
 from app.auth.jwt import JWTHandler
 from app.utils.logger import SingletonLogger
 from app.FileManager.fileOperations import fileOperations
@@ -20,7 +20,7 @@ def get_userservice():
     logger = SingletonLogger()
     databaseops = DatabaseOperations()
     authservice = AuthService(config)
-    keygen  = KeyHandler()
+    keygen  = KeyHandler(DatabaseOperations)
     jwthandler = JWTHandler(config, logger)
 
     return UserService(databaseops, authservice, keygen, jwthandler)   
@@ -33,4 +33,11 @@ def get_jwt_handler():
 
 
 def get_file_service():
-    return fileOperations()
+    return fileOperations(DatabaseOperations, KeyHandler)
+
+
+def get_encryption_service():
+    # only instantiate what you need here
+    keygen = KeyHandler()
+    fileservice = fileOperations()
+    return EncryptionService(keyhandler=keygen, fileoperations=fileservice)  

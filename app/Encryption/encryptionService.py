@@ -4,7 +4,7 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.Database.DatabaseOperations import DatabaseOperations
-from app.Encryption_Services.keyGenerator import KeyHandler
+from app.Encryption.keyGenerator import KeyHandler
 
 if TYPE_CHECKING:
     from app.FileManager.fileOperations import fileOperations

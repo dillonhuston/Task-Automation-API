@@ -1,32 +1,34 @@
 import os
-from datetime import datetime
 import mimetypes
+
+from datetime import datetime
 
 from fastapi import UploadFile, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-
+from app.config import Config
 from app.dependencies.constants import MAX_UPLOAD_SIZE_MB
 from app.schemas.file import Downloadfile
 from app.Database.DatabaseOperations import DatabaseOperations
-from app.Encryption_Services.encryptionService import EncryptionService
-from app.Encryption_Services.keyGenerator import KeyHandler
+from app.Encryption.encryptionService import EncryptionService
+from app.Encryption.keyGenerator import KeyHandler
 from app.utils.logger import SingletonLogger
 
-BASE_DIR = os.environ.get("BASE_DIR", "/tmp/uploads")
+
 logger = SingletonLogger().get_logger()
 
 
 class fileOperations:
-    def __init__(self, dboperations: DatabaseOperations, keyhandler: KeyHandler):
+    def __init__(self, dboperations: DatabaseOperations, keyhandler: KeyHandler, config: Config):
         self.dboperation = dboperations
-        # EncryptionService needs a fileOperations instance for read_file
-        self.encryptionservice = EncryptionService(lambda _: keyhandler, self)
+        self.config = config
+        #Added fileoperations reference
+        self.encryptionservice = EncryptionService(self, keyhandler, self)
 
     async def save_file(self, file: UploadFile, user_id: str) -> tuple[str, str]:
         try:
             filename = f"{user_id}_{datetime.now():%Y-%m-%d_%H-%M-%S}_{file.filename}"
-            os.makedirs(BASE_DIR, exist_ok=True)
-            file_path = os.path.join(BASE_DIR, filename)
+            os.makedirs(self.config.BASE_DIR, exist_ok=True)
+            file_path = os.path.join(self,self.config.BASE_DIR, filename)
 
             with open(file_path, "wb") as f:
                 contents = file.file.read()

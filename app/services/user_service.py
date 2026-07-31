@@ -5,7 +5,7 @@ from app.models.user import UserModel
 
 from app.dependencies.dependency import JWTHandler
 from app.auth.auth import AuthService
-from app.Encryption_Services.keyGenerator import KeyHandler
+from app.Encryption.keyGenerator import KeyHandler
 
 
 class UserService():
