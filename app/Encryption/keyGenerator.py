@@ -11,7 +11,7 @@ class KeyHandler:
     def __init__(self, databaseops: DatabaseOperations):
         self.databaseops = databaseops
 
-    async def addKeyToDatabase(self, key_hex: str, db: AsyncSession, user_id: int) -> bool:
+    async def addKeyToDatabase(self, key_hex: str, db: AsyncSession, user_id: str) -> bool:
         user = await self.databaseops.GetUserByID(db, user_id)
         if not user:
             logger.error("Failed to find user while storing encryption key: %s", user_id)
@@ -25,7 +25,7 @@ class KeyHandler:
         logger.info("Encryption key stored successfully for user %s", user_id)
         return True
 
-    async def createKey(self, user_id: int, db: AsyncSession) -> str:
+    async def createKey(self, user_id: str, db: AsyncSession) -> str:
         """Generate a new 256-bit key and store it as hex string in DB. Returns the hex string."""
         key_bytes = AESGCM.generate_key(bit_length=256)
         key_hex = key_bytes.hex()
@@ -39,15 +39,13 @@ class KeyHandler:
         return key_hex
 
     async def getKey(self, db: AsyncSession, user_id: str) -> bytes | None:
-        user_id_int = int(user_id)
-
-        user = await self.databaseops.GetUserByID(db, user_id_int)
+        user = await self.databaseops.GetUserByID(db, user_id)
         if not user:
             logger.error("User %s not found when retrieving encryption key", user_id)
             return None
 
         if not getattr(user, "encryption_key", None):
-            key_hex = await self.createKey(user_id_int, db)
+            key_hex = await self.createKey(user_id, db)
             return bytes.fromhex(key_hex)
 
         stored = user.encryption_key

@@ -3,14 +3,34 @@ Schemas for task-related data models and validation.
 """
 
 from datetime import datetime, timezone
+from typing import Optional
+from app.models.user import UserModel
 from enum import Enum
 from pydantic import BaseModel, field_validator
+from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
+from fastapi import File, UploadFile
 
 
 def aware_utcnow() -> datetime:
     """Return current UTC time with timezone awareness."""
     return datetime.now(timezone.utc)
+
+class TaskType(str, Enum):
+    """Enum for task types with UPPER_CASE naming style."""
+    REMINDER = "reminder"
+    FILE_CLEANUP = "file_cleanup"
+
+# In app/schemas/tasks.py
+class AddTask(BaseModel):
+    """Schema for adding a task with optional file upload."""
+    title: str
+    description: Optional[str] = None 
+    receiver_email: str
+    task_type: TaskType
+    schedule_time: datetime
+    webhook_url: Optional[str] = None
+    file: Optional[UploadFile] = None
 
 
 class TaskStatus(str, Enum):
@@ -22,10 +42,7 @@ class TaskStatus(str, Enum):
     FAILED = "failed"
 
 
-class TaskType(str, Enum):
-    """Enum for task types with UPPER_CASE naming style."""
-    REMINDER = "reminder"
-    FILE_CLEANUP = "file_cleanup"
+
 
 
 class FileTypes(str, Enum):
@@ -79,6 +96,18 @@ class TaskResponse(BaseModel):
         "from_attributes": True
     }
 
+    
+
+class Task(BaseModel):
+    id: str
+    user_id: str
+    task_type: str
+    schedule_time: datetime
+    status: str
+    title: Optional[str] = None  
+    receiver_email: Optional[str] = None
+    file_id: Optional[str] = None  
+        
 
 class TaskHistoryS(BaseModel):
     task_type: str
@@ -90,4 +119,24 @@ class TaskHistoryS(BaseModel):
         "from_attributes": True
     }
 
-__all__ = ["TaskStatus", "TaskType", "TaskCreate", "TaskResponse"]
+
+# In app/schemas/tasks.py
+class ScheduleTask(BaseModel):
+    user_id: str
+    task_type: TaskType
+    task_data: TaskCreate
+    receiver_email: Optional[str] = None  
+    webhook_url: Optional[str] = None    
+    file: Optional[UploadFile] = None
+
+
+__all__ = [
+    "TaskStatus", 
+    "TaskType", 
+    "TaskCreate", 
+    "TaskResponse", 
+    "TaskHistoryS", 
+    "ScheduleTask",
+    "AddTask",
+    "Task"
+]

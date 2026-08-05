@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from pathlib import Path
 from app.routers.auth import router as auth_router
-#from app.routers.tasks import router as task_router
+from app.routers.tasks import router as task_router
 #from app.routers.admin import router as admin_router
 from app.routers.file_upload import router as file_router
 from app.routers.files import router as file_data
@@ -38,7 +38,7 @@ app.add_middleware(
 
 app.include_router(auth_router)
 app.include_router(file_router)
-#app.include_router(task_router)
+app.include_router(task_router)
 #pp.include_router(admin_router)
 app.include_router(file_data)
 

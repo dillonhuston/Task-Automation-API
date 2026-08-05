@@ -1,10 +1,9 @@
 import os
 import mimetypes
-
 from datetime import datetime
-
 from fastapi import UploadFile, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.config import Config
 from app.dependencies.constants import MAX_UPLOAD_SIZE_MB
 from app.schemas.file import Downloadfile
@@ -21,20 +20,22 @@ class fileOperations:
     def __init__(self, dboperations: DatabaseOperations, keyhandler: KeyHandler, config: Config):
         self.dboperation = dboperations
         self.config = config
-        #Added fileoperations reference
-        self.encryptionservice = EncryptionService(self, keyhandler, self)
+        self.keyhandler = keyhandler
+        # Fixed: removed self.fileoperations reference
+        self.encryptionservice = EncryptionService(self.keyhandler, self)
 
     async def save_file(self, file: UploadFile, user_id: str) -> tuple[str, str]:
         try:
             filename = f"{user_id}_{datetime.now():%Y-%m-%d_%H-%M-%S}_{file.filename}"
-            os.makedirs(self.config.BASE_DIR, exist_ok=True)
-            file_path = os.path.join(self,self.config.BASE_DIR, filename)
+            upload_dir = os.path.join(self.config.BASE_DIR, "tmp/uploads")
+            os.makedirs(upload_dir, exist_ok=True)
+            file_path = os.path.join(upload_dir, filename)
 
+            contents = await file.read()
             with open(file_path, "wb") as f:
-                contents = file.file.read()
                 f.write(contents)
 
-            file.file.seek(0)
+            await file.seek(0)
             logger.info("File saved: %s at %s", filename, file_path)
             return filename, file_path
 
@@ -47,9 +48,9 @@ class fileOperations:
 
     async def validate_file(self, file: UploadFile) -> None:
         try:
-            file.file.seek(0, os.SEEK_END)
-            size_bytes = file.file.tell()
-            file.file.seek(0)
+            await file.seek(0, os.SEEK_END)
+            size_bytes = await file.tell()
+            await file.seek(0)
 
             size_mb = size_bytes / (1024 * 1024)
             if size_mb > MAX_UPLOAD_SIZE_MB:
@@ -70,7 +71,7 @@ class fileOperations:
     async def list_files(self, db: AsyncSession, user_id: str):
         files = await self.dboperation.ReturnUserFiles(db, user_id)
         if not files:
-            raise ValueError(f"No files can be found for {user_id}")
+            return []  # Return empty list instead of raising error
         return [
             {
                 "id": f.id,
@@ -87,9 +88,15 @@ class fileOperations:
             logger.warning("No file available for user: %s", user_id)
             raise ValueError("No file found for this user.")
 
+        # Read encrypted file
+        encrypted_data = await self.read_file(file.file_path)
+        nonce = encrypted_data[:12]
+        ciphertext = encrypted_data[12:]
+
         decrypted_data = await self.encryptionservice.decrypt(
-            file_path=file.file_path,
-            user_id=str(user_id),
+            user_id=user_id,
+            ciphertext=ciphertext,
+            nonce=nonce,
             db=db,
         )
 

@@ -20,7 +20,7 @@ async def list_files(
     fileservice: fileOperations = Depends(get_file_service),
     user: UserModel = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)):
-    files = await fileservice.list_files(db, str(user.id))
+    files = await fileservice.list_files(db, user.id)
     if not files:
         raise HTTPException(status_code=404, detail="Can not find any files matching the current user.")
     return files
