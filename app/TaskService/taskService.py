@@ -57,7 +57,6 @@ class TaskService:
         # Handle file upload if present
         if task_data.file is not None and task_data.file.filename:
             try:
-                # Create fileManager with db session
                 file_mgr = fileManager(db=db)
                 uploaded_file = await file_mgr.uploadFile(
                     user_id=task_data.user_id, 
@@ -100,7 +99,7 @@ class TaskService:
                 webhook_url=task_data.task_data.webhook_url,
                 status=TASK_STATUS_SCHEDULED,
                 task_name=task_data.task_data.title,
-                message=f"Task: {task_data.task_data.title} ID: {saved_task.id} Scheduled for {saved_task.schedule_time}"
+                message=f"Task: {task_data.task_data.title} has Scheduled for {saved_task.schedule_time}, and email has been sent to you"
             )
         except Exception as e:
             self.logger.error(f"Failed to send Discord notification: {e}")

@@ -21,7 +21,7 @@ def get_userservice():
     logger = SingletonLogger()
     databaseops = DatabaseOperations()
     authservice = AuthService(config)
-    keygen = KeyHandler(databaseops)  # Fixed: pass instance, not class
+    keygen = KeyHandler(databaseops)  
     jwthandler = JWTHandler(config, logger)
 
     return UserService(databaseops, authservice, keygen, jwthandler)
@@ -34,7 +34,6 @@ def get_jwt_handler():
 
 
 def get_file_service():
-    # Fixed: create instances, don't pass classes
     db_ops = DatabaseOperations()
     keyhandler = KeyHandler(db_ops)
     config = Config()
@@ -49,7 +48,6 @@ def get_encryption_service():
 
 
 def get_file_manager():
-    # Fixed: return instance, not class
     db_ops = DatabaseOperations()
     keyhandler = KeyHandler(db_ops)
     config = Config()
@@ -57,5 +55,4 @@ def get_file_manager():
 
 
 def get_task_service():
-    # Fixed: pass instance, not class
     return TaskService(fileservice=get_file_manager(), databaseops=get_database_operations())

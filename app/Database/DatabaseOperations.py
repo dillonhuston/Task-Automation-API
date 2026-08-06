@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 from typing import Optional, List
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update, desc
@@ -153,7 +154,7 @@ class DatabaseOperations():
         status: str,
         details: str,
         user_id: str,
-        executed_at: str) -> TaskModel:
+        executed_at: datetime) -> TaskModel:
 
         """Add task history."""
         try:

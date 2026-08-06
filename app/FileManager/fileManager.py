@@ -51,7 +51,7 @@ class fileManager:
             nonce, ciphertext = await self.encryption.encrypt(
                 user_id=user_id,
                 plaintext=plaintext,
-                db=self.db,  # Pass the db instance
+                db=self.db, 
             )
 
             await self.fileoperations.overwrite_file(file_path, nonce + ciphertext)
