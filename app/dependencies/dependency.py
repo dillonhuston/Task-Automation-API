@@ -51,7 +51,11 @@ def get_file_manager():
     db_ops = DatabaseOperations()
     keyhandler = KeyHandler(db_ops)
     config = Config()
-    return fileManager(db_ops, keyhandler, config)
+    return fileManager(
+        db=None,
+        db_ops=db_ops,
+        keyhandler = keyhandler,
+        config=config)
 
 
 def get_task_service():

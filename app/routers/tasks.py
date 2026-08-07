@@ -47,8 +47,7 @@ async def schedule_task_endpoint(
                 schedule_time=task.schedule_time,
                 webhook_url=task.webhook_url,
                 task_type=task.task_type
-            ),
-            file=task.file
+            )
         )
         new_task = await taskservice.schedule_task(db=db, task_data=task_data)
         logger.info(f"Task scheduled: {new_task.id} for user {user.id}")

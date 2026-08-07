@@ -21,7 +21,7 @@ class fileOperations:
         self.dboperation = dboperations
         self.config = config
         self.keyhandler = keyhandler
-        # Fixed: removed self.fileoperations reference
+        # removed self.fileoperations reference
         self.encryptionservice = EncryptionService(self.keyhandler, self)
 
     async def save_file(self, file: UploadFile, user_id: str) -> tuple[str, str]:
@@ -48,8 +48,11 @@ class fileOperations:
 
     async def validate_file(self, file: UploadFile) -> None:
         try:
-            await file.seek(0, os.SEEK_END)
-            size_bytes = await file.tell()
+            # we should instead read the whole file content to check size
+            data = await file.read()
+            size_bytes = len(data)
+
+            # then we reset the pointer
             await file.seek(0)
 
             size_mb = size_bytes / (1024 * 1024)

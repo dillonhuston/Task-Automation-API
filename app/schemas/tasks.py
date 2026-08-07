@@ -30,7 +30,7 @@ class AddTask(BaseModel):
     task_type: TaskType
     schedule_time: datetime
     webhook_url: Optional[str] = None
-    file: Optional[UploadFile] = None
+  
 
 
 class TaskStatus(str, Enum):
@@ -127,7 +127,7 @@ class ScheduleTask(BaseModel):
     task_data: TaskCreate
     receiver_email: Optional[str] = None  
     webhook_url: Optional[str] = None    
-    file: Optional[UploadFile] = None
+ 
 
 
 __all__ = [

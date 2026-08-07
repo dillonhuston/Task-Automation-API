@@ -29,6 +29,7 @@ class UserService():
 
         new_user = UserModel(
             username = user.username,
+            is_admin = user.admin,
             email = user.email,
             hashed_password = hashed_password)
         

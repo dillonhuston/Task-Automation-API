@@ -30,7 +30,7 @@ class fileManager:
         self.encryption = EncryptionService(self.keyhandler, self.fileoperations)
         self.logger = SingletonLogger().get_logger()
 
-    async def uploadFile(self, user_id: str, file: UploadFile):
+    async def uploadFile(self, user_id: str, file: UploadFile, db: AsyncSession):
         try:
             await self.fileoperations.validate_file(file)
 
@@ -51,7 +51,7 @@ class fileManager:
             nonce, ciphertext = await self.encryption.encrypt(
                 user_id=user_id,
                 plaintext=plaintext,
-                db=self.db, 
+                db=db, 
             )
 
             await self.fileoperations.overwrite_file(file_path, nonce + ciphertext)
@@ -64,7 +64,7 @@ class fileManager:
                 nonce=nonce,
             )
 
-            saved_file = await self.db_ops.AddFile(self.db, file_data)
+            saved_file = await self.db_ops.AddFile(db, file_data)
 
             return {
                 "id": saved_file.id,

@@ -51,23 +51,10 @@ class TaskService:
         Returns:
             TaskResponse: Pydantic validated task
         """
-        uploaded_file = None
+        # removed the file upload, can be easily added, but this is an API that does not have a UI
         file_id = None
         
-        # Handle file upload if present
-        if task_data.file is not None and task_data.file.filename:
-            try:
-                file_mgr = fileManager(db=db)
-                uploaded_file = await file_mgr.uploadFile(
-                    user_id=task_data.user_id, 
-                    file=task_data.file
-                )
-                file_id = uploaded_file.get('id') if uploaded_file else None
-                self.logger.debug(f"Uploaded file for task: {file_id}")
-            except Exception as e:
-                self.logger.error(f"Failed to upload file for task: {e}")
-                file_id = None
-
+        
         # Create new task
         new_task = TaskSchema(
             id=str(uuid4()),

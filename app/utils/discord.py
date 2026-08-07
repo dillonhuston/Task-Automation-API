@@ -1,26 +1,40 @@
 import requests
 from typing import Optional
+from datetime import datetime, UTC
 from app.utils.logger import SingletonLogger
-
 
 logger = SingletonLogger().get_logger()
 
-def send_discord_notification(
-        *,
-        status:str,
-        message: str,
-        task_name: str,
-        webhook_url: str
-        )->Optional[str]:
+def send_discord_notification(status: str, message: str, task_name: str, webhook_url: str,color: Optional[int] = None):
     try:
-        #This just adds the message created to include the details of new task scheduled.
-        content = message
-        payload = {"content": content}
+        if color is None:
+            status_colors = {
+                "SCHEDULED": 0x3498db,
+                "COMPLETED": 0x2ecc71,
+                "FAILED": 0xe74c3c,
+                "PENDING": 0xf1c40f,
+            }
+            color = status_colors.get(status.upper(), 0x808080)
+
+        embed = {
+            "title": f"Task Update: {task_name}",
+            "description": message,
+            "color": color,
+            "timestamp": datetime.now(UTC).isoformat(),  
+            "fields": [
+                {"name": "Status", "value": status, "inline": True},
+                {"name": "Task Name", "value": task_name, "inline": True}
+            ],
+
+            "footer": {"text": "Task Automation API"},
+        }
+
+        payload = {"content": None, "embeds": [embed]}
         response = requests.post(webhook_url, json=payload)
-        
-        if response.status_code == 204: # return 204 on success
-            return content
+        if response.status_code == 204:
+            return f"Embed sent for task {task_name}"
         else:
-            logger.log(msg=f"Discord message failed to send {response.text}. app.utils.discord ")
+            logger.error(f"Discord embed failed: {response.text}")
     except Exception as e:
-        logger.log(msg=f"Error sending Discord message{e}", level=1)
+        logger.error(f"Error sending Discord embed: {e}")
+    return None

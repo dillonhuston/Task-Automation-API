@@ -2,7 +2,8 @@ import uuid
 from datetime import datetime
 from typing import Optional, List
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update, desc
+
+from sqlalchemy import select, update, desc, func
 from app.models.user import UserModel
 from app.models.tasks import Task as TaskModel
 from app.models.file import FileModel
@@ -24,6 +25,10 @@ class DatabaseOperations():
         user = result.scalar_one_or_none()
         return user
 
+    async def GetUsers(self, db: AsyncSession) -> List[UserModel]:
+        result = await db.execute(select(UserModel))
+        return result.scalars().all()
+
     async def AddUser(self, db: AsyncSession, user: UserModel):
         db.add(user)
         await db.commit()
@@ -33,6 +38,14 @@ class DatabaseOperations():
     async def GetUserByID(self, db: AsyncSession, user_id: str):
         result = await db.execute(select(UserModel).where(UserModel.id == user_id))
         user = result.scalar_one_or_none()
+        return user
+
+    async def DeleteUser(self, db: AsyncSession, user_id: str):
+        result = await db.execute(select(UserModel).where(UserModel.id == user_id))
+        user = result.scalar_one_or_none()
+        if user:
+            await db.delete(user)
+            await db.commit()
         return user
 
     """File operations"""
@@ -75,7 +88,7 @@ class DatabaseOperations():
             id=task.id,
             user_id=task.user_id,
             task_type=task.task_type,
-            schedule_time=task.schedule_time,  # Fixed: was task.task_type
+            schedule_time=task.schedule_time, 
             status=task.status,
             receiver_email=task.receiver_email,
             title=task.title,
@@ -119,6 +132,16 @@ class DatabaseOperations():
         )
         history = result.scalars().all()
         return history
+
+
+    async def ReturnAllTaskHistory(self, db: AsyncSession, limit: int = 5) -> List:
+        from app.models.tasks import TaskHistory
+        result = await db.execute(
+            select(TaskHistory)
+            .order_by(desc(TaskHistory.executed_at))
+            .limit(limit)
+        )
+        return result.scalars().all()
 
     async def DeleteTask(self, db: AsyncSession, task_id: str) -> bool:
         """Delete a task by ID."""
@@ -174,3 +197,12 @@ class DatabaseOperations():
             self.logger.error(f"Error adding task history: {e}")
             await db.rollback()
             raise
+
+    async def GetUserCount(self, db: AsyncSession) -> int:
+        result = await db.execute(select(func.count()).select_from(UserModel))
+        return result.scalar() or 0
+
+    async def GetTaskCount(self, db: AsyncSession) -> int:
+        """Return total number of tasks."""
+        result = await db.execute(select(func.count()).select_from(TaskModel))
+        return result.scalar() or 0

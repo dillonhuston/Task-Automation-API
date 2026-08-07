@@ -14,6 +14,7 @@ logger = SingletonLogger().get_logger()
 
 class EncryptionService:
     def __init__(self, keyhandler: KeyHandler, fileoperations: "fileOperations"):
+        
         self.keyhandler = keyhandler
         self.fileoperations = fileoperations
 
