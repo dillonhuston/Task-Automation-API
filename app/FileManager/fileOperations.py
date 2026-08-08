@@ -11,6 +11,7 @@ from app.Database.DatabaseOperations import DatabaseOperations
 from app.Encryption.encryptionService import EncryptionService
 from app.Encryption.keyGenerator import KeyHandler
 from app.utils.logger import SingletonLogger
+from app.exceptions.exceptions import FileError,  AuthenticationError, FileProcessingError
 
 
 logger = SingletonLogger().get_logger()
@@ -38,14 +39,15 @@ class fileOperations:
             await file.seek(0)
             logger.info("File saved: %s at %s", filename, file_path)
             return filename, file_path
+        
+        except FileError:
+            raise
 
         except Exception as exc:
             logger.exception("Error saving file: %s", exc)
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to save uploaded file.",
-            ) from exc
+            raise FileProcessingError(detail="Failed to save file to the path provided]")
 
+            
     async def validate_file(self, file: UploadFile) -> None:
         try:
             # we should instead read the whole file content to check size
@@ -58,18 +60,14 @@ class fileOperations:
             size_mb = size_bytes / (1024 * 1024)
             if size_mb > MAX_UPLOAD_SIZE_MB:
                 logger.warning("Upload rejected: file too large (%.2f MB)", size_mb)
-                raise HTTPException(
-                    status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                raise FileError(
                     detail=f"File exceeds max allowed size of {MAX_UPLOAD_SIZE_MB} MB",
                 )
-        except HTTPException:
+        except FileError:
             raise
         except Exception as exc:
             logger.exception("Error validating file size: %s", exc)
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to validate file size.",
-            ) from exc
+            raise FileProcessingError("Can not validate file size.")
 
     async def list_files(self, db: AsyncSession, user_id: str):
         files = await self.dboperation.ReturnUserFiles(db, user_id)
@@ -86,10 +84,13 @@ class fileOperations:
         ]
 
     async def download_file(self, db: AsyncSession, file_id: str, user_id: str):
-        file = await self.dboperation.GetFileByID(db, file_id)
-        if not file:
-            logger.warning("No file available for user: %s", user_id)
-            raise ValueError("No file found for this user.")
+        try:
+            file = await self.dboperation.GetFileByID(db, file_id)
+        except FileError:
+            raise 
+        except Exception as e:
+            logger.warning(f"No file available for user: {e}", user_id)
+            raise FileError(detail="No file found for the current user")
 
         # Read encrypted file
         encrypted_data = await self.read_file(file.file_path)
@@ -118,14 +119,19 @@ class fileOperations:
         try:
             with open(file_path, "rb") as f:
                 return f.read()
+        except FileProcessingError:
+            raise
         except Exception as e:
-            raise ValueError(
+            raise FileError(
                 "Failed to read file. File could have no contents or does not exist."
-            ) from e
+            )
 
     async def overwrite_file(self, file_path: str, encrypted_bytes: bytes) -> int:
         try:
             with open(file_path, "wb") as f:
                 return f.write(encrypted_bytes)
+        except FileProcessingError:
+            raise
+
         except Exception as e:
-            raise ValueError(f"Failed to write data to {file_path}. {e}") from e
+            raise FileProcessingError(f"Failed to write data to path")

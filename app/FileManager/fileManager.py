@@ -11,6 +11,7 @@ from app.FileManager.fileOperations import fileOperations
 from app.FileHash.API.HashFile import HashHandler
 from app.schemas.file import FileSave
 from app.utils.logger import SingletonLogger
+from exceptions.exceptions import FileError, F
 
 logger = SingletonLogger().get_logger()
 
@@ -73,7 +74,12 @@ class fileManager:
                 "file_hash": saved_file.file_hash,
                 "nonce": saved_file.nonce,
             }
+        except FileError:
+            raise
 
         except Exception as e:
             logger.exception("Upload failed: %s", e)
-            raise HTTPException(status_code=500, detail="Upload processing failed") from e
+            raise HTTPException(
+                status_code=500,
+                detail=f"Upload processing failed"
+                ) 

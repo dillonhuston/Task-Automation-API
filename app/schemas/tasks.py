@@ -21,7 +21,7 @@ class TaskType(str, Enum):
     REMINDER = "reminder"
     FILE_CLEANUP = "file_cleanup"
 
-# In app/schemas/tasks.py
+# removed file param
 class AddTask(BaseModel):
     """Schema for adding a task with optional file upload."""
     title: str

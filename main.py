@@ -1,5 +1,6 @@
 
 import sys
+import exc
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -10,6 +11,8 @@ from app.routers.file_upload import router as file_router
 from app.routers.files import router as file_data
 from app.models.database import Base, engine
 from fastapi.middleware.cors import CORSMiddleware
+from app.exceptions.exceptions import ServiceError
+from app.exceptions.exception_handler import service_exception_handler, unhandled_exception_handler
 
 from contextlib import asynccontextmanager
 
@@ -33,7 +36,8 @@ app.add_middleware(
 )
 
 
-
+app.add_exception_handler(ServiceError, service_exception_handler)
+app.exception_handler(Exception, unhandled_exception_handler)
 
 
 app.include_router(auth_router)
