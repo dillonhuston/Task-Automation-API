@@ -1,6 +1,5 @@
 
 import sys
-import exc
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from pathlib import Path

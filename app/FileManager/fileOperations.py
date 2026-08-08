@@ -72,7 +72,7 @@ class fileOperations:
     async def list_files(self, db: AsyncSession, user_id: str):
         files = await self.dboperation.ReturnUserFiles(db, user_id)
         if not files:
-            return []  # Return empty list instead of raising error
+            return []  
         return [
             {
                 "id": f.id,

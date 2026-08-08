@@ -20,7 +20,7 @@ class TaskType(str, Enum):
     """Enum for task types with UPPER_CASE naming style."""
     REMINDER = "reminder"
     FILE_CLEANUP = "file_cleanup"
-
+ 
 # removed file param
 class AddTask(BaseModel):
     """Schema for adding a task with optional file upload."""

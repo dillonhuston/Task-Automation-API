@@ -11,7 +11,7 @@ from app.FileManager.fileOperations import fileOperations
 from app.FileHash.API.HashFile import HashHandler
 from app.schemas.file import FileSave
 from app.utils.logger import SingletonLogger
-from exceptions.exceptions import FileError, F
+from exceptions.exceptions import FileError
 
 logger = SingletonLogger().get_logger()
 
