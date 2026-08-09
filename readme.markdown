@@ -45,7 +45,7 @@ Built with **FastAPI**, **Celery**, **Redis**, and **SQLAlchemy**, featuring sec
 
 ---
 
-##  Features (v1.0)
+##  Features (v2.0)
 
 - **Automated File Cleanup** – Delete old files from local directories on a schedule(locally)
 - **Email Reminders** – Send timed email notifications with full content customization  
@@ -54,7 +54,12 @@ Built with **FastAPI**, **Celery**, **Redis**, and **SQLAlchemy**, featuring sec
 - **Webhook Notifications** – Get real-time updates when tasks complete or fail  
 - **Rich CLI Client** – Full-featured terminal interface for task management  
 - **Task History & Cancellation** – List, monitor, and cancel scheduled tasks  
+
 ![Task List & History](assets/tasks.png)
+
+
+- **Secure File Upload & Storage** – Files are encrypted with per‑user AES‑GCM keys; user keys themselves are encrypted at rest using a global master key.
+
 - **Modular & Type-Safe** – Clean architecture with Pydantic validation and full typing  
 - **Production-Ready Logging** – Thread-safe singleton logger with structured output  
 - **Docker Compose Deployment** – One-command full-stack deployment  
@@ -62,35 +67,43 @@ Built with **FastAPI**, **Celery**, **Redis**, and **SQLAlchemy**, featuring sec
 
 ---
 
-##  New Features & Technical Updates (v2.0)
+## **New Features & Technical Updates (v2.0)**
 
-This update introduces major improvements to the Task Automation API, focusing on **enhanced file handling**, **dashboard capabilities**, and **task scheduling with file support**.
+This release is a **complete architectural update**, migrating from  Flask based backend to a fully FastAPI application with a clean **Service‑Repository** pattern, **strict Pydantic v2** validation, and updated**security**.
 
-### New Features
+### Performance & Architecture
 
-- **Custom File Hashing & Validation** – Self made security system for verifying file integrity and preventing tampering  
-- **Secure File Uploading & Storage** – Government grade file handling with encryption, validation, and secure storage mechanisms  
-- **File Attachments in Email Reminders** – Tasks can now include file attachments that are securely processed and delivered via email  
-- **File Decryption via Celery** – Files are securely decrypted in the background before being sent via email, ensuring the server never sees plaintext data  
-- **Combined Dashboard View** – View all tasks and uploaded files on a single page for easy monitoring and management  
-- **Task Reminder Email** – Automatic email notifications are sent when a task is due, including attached files if applicable  
-- **Backend Cleanup & Linting** – Full codebase checked with Ruff, type-safe Pydantic models, and structured logging improvements  
+- **Full Async Migration** All endpoints, database queries, and I/O operations are now async with AsyncSession, improving response times.
+- **Service‑Repository Pattern** Business logic is cleanly separated into **Services** (e.g., UserService, fileManager, TaskService) while **DatabaseOperations** acts as a dedicated Repository, carrying out all SQLAlchemy queries.
+- **FastAPI Dependency Injection** Services are injected via `Depends`, making them and easily testable.
+- **Centralised Configuration** All environment variables are validated and managed through **pydantic‑settings**, replacing scattered os.getenv calls.
 
-### Technical Improvements
+### Security Upgrades
 
-- **Custom Security Layer** – Built from scratch file hashing algorithms and validation routines for maximum security control  
-- **Optimized Celery Task Workflow** – Background tasks are more robust, handle optional files, and include retry/backoff for SMTP errors  
-- **Refined Email Module** – Centralized email logic with support for optional attachments, secure SMTP connections, and logging of successes/failures  
-- **Database Enhancements** – Improved SQLAlchemy queries for files, tasks, and history tracking  
-- **Deployment Ready** – Docker Compose setup updated for production deployment; works seamlessly with FastAPI, Redis, and PostgreSQL  
+- **User Encryption Keys are Now Encrypted at Rest** Each user's AES‑GCM key is generated with cryptography and stored encrypted using a global Fernet master key (set via MASTER_KEY env var). Plaintext keys never touch the database.
+- **Improved Secret Handling** Sensitive values (JWT_SECRET, MASTER_KEY) are loaded as SecretStr to prevent accidental exposure in logs.
+- **Advanced File Encryption** Files are encrypted per‑user with AES‑GCM (256‑bit) using a unique nonce per file, with AAD bound to user_id.
+- **Password Hashing** Secure pbkdf2_sha256 with salt.
+
+### Code Quality & Maintainability
+
+- **Standardised Logging** Replaced custom singleton wrapper with Python's standard logging module easily swappable with loguru or structlog if you wanted.
+- **Full Type Hints** Every function and method is fully typed, improving IDE support and catching errors early.
+- **Ruff & Black** Codebase formatted and linted with Ruff (100% PEP8 compliance) and Black.
+- **Error Handling** Centralised exception handlers with custom ServiceError exceptions.
+
+
+- **Docker Compose Ready** Production‑readyReady to eb setup on the cloud, config via environment variables with a provided .env_example.
+
+---
 
 ### Benefits
 
-- Advanced codebase combining one year of development into one unified system  
+- Advanced codebase combining last years development into one unified system  
 - Custom built security features created for this application's needs  
 - Easier task monitoring with all files/tasks in one dashboard  
 - Safer and more reliable email delivery with optional encrypted file attachments  
-- Scalable and maintainable architecture for future feature additions
+- Scalable and maintainable architecture for future features
 
 ![Email reminder demo](assets/addtask.png)
 
@@ -153,14 +166,6 @@ python app/CLIENT/client.py create_task \
 ## API Endpoints (Swagger UI)
 Once running: **http://localhost:8000/docs**
 
-| Method   | Endpoint              | Description                  |
-|----------|-----------------------|------------------------------|
-| `POST`   | `/register`           | Create a new user account    |
-| `POST`   | `/login`              | Authenticate and get JWT token |
-| `POST`   | `/schedule`           | Schedule a new task          |
-| `GET`    | `/list_tasks`         | View all scheduled tasks     |
-| `DELETE` | `/cancel/{task_id}`   | Cancel a pending task        |
-| `GET`    | `/tasks/task_history` | Gets task history of user    |
 
 ---
 
@@ -168,14 +173,18 @@ Once running: **http://localhost:8000/docs**
 Create a `.env` file with your Gmail credentials:
 
 ```bash
-EMAIL=your_email@gmail.com
-PASSWORD=your_app_password
-REDIS_URL=redis://localhost:6379/0
-DATABASE_URL=sqlite:///./dev.db
-JWT_SECRET=your-super-secret-jwt-key-here
+EMAIL=email.com
+PASSWORD=7474737474747
+MASTER_KEY=fjfjfjfgehd
+
+
+DATABASE_URL=ENTR URL
+JWT_SECRET=FqFHFGHFHF
+BASE_DIR=/TMP/UPLOADS
+LOG_LEVEL=INFO
 ```
 
-**Gmail Users:** Enable 2FA and create an **App Password** for secure email sending.  
+**Google Users:** Enable 2FA and create an **App Password** for secure email sending.  
 You can also refer to the included `.env_example` file for a template of all required environment variables.
 
 ---
@@ -251,7 +260,7 @@ Contributions are very welcome! Here's how:
 
 ## License
 MIT License  
-Copyright (c) 2025 Dillion Huston
+Copyright (c) 2026 Dillion Huston
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
