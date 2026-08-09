@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from fastapi import UploadFile, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.config import Config
+from app.settings import settings
 from app.Database.DatabaseOperations import DatabaseOperations
 from app.Encryption.encryptionService import EncryptionService
 from app.Encryption.keyGenerator import KeyHandler
@@ -17,27 +17,22 @@ logger = SingletonLogger().get_logger()
 
 
 class fileManager:
-    def __init__(self, db: AsyncSession = None, db_ops: DatabaseOperations = None, 
-                 keyhandler: KeyHandler = None, config: Config = None):
-        self.db = db
+    def __init__(self, db_ops: DatabaseOperations = None, keyhandler: KeyHandler = None):
         self.db_ops = db_ops or DatabaseOperations()
-        self.config = config or Config()
         self.keyhandler = keyhandler or KeyHandler(self.db_ops)
         self.fileoperations = fileOperations(
             dboperations=self.db_ops,
             keyhandler=self.keyhandler,
-            config=self.config
         )
         self.encryption = EncryptionService(self.keyhandler, self.fileoperations)
-        self.logger = SingletonLogger().get_logger()
 
     async def uploadFile(self, user_id: str, file: UploadFile, db: AsyncSession):
         try:
             await self.fileoperations.validate_file(file)
 
-            upload_dir = os.path.join(self.config.BASE_DIR, "tmp/uploads")
+            upload_dir = os.path.join(settings.BASE_DIR, "tmp/uploads")
             os.makedirs(upload_dir, exist_ok=True)
-            
+
             filename = f"{user_id}_{datetime.now(tz=timezone.utc):%Y-%m-%d_%H-%M-%S}_{file.filename}"
             file_path = os.path.join(upload_dir, filename)
 
@@ -52,7 +47,7 @@ class fileManager:
             nonce, ciphertext = await self.encryption.encrypt(
                 user_id=user_id,
                 plaintext=plaintext,
-                db=db, 
+                db=db,
             )
 
             await self.fileoperations.overwrite_file(file_path, nonce + ciphertext)
@@ -76,10 +71,9 @@ class fileManager:
             }
         except FileError:
             raise
-
         except Exception as e:
             logger.exception("Upload failed: %s", e)
             raise HTTPException(
                 status_code=500,
-                detail=f"Upload processing failed"
-                ) 
+                detail="Upload processing failed"
+            )

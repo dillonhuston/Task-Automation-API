@@ -3,11 +3,10 @@ from app.auth.auth import AuthService
 from app.Encryption.keyGenerator import KeyHandler
 from app.Encryption.encryptionService import EncryptionService
 from app.auth.jwt import JWTHandler
-from app.utils.logger import SingletonLogger
 from app.FileManager.fileOperations import fileOperations
-from app.config import Config
 from app.FileManager.fileManager import fileManager
 from app.TaskService.taskService import TaskService
+from app.services.user_service import UserService
 
 
 def get_database_operations():
@@ -15,47 +14,34 @@ def get_database_operations():
 
 
 def get_userservice():
-    from app.services.user_service import UserService
-    
-    config = Config()
-    logger = SingletonLogger()
     databaseops = DatabaseOperations()
-    authservice = AuthService(config)
-    keygen = KeyHandler(databaseops)  
-    jwthandler = JWTHandler(config, logger)
-
+    authservice = AuthService()                
+    keygen = KeyHandler(databaseops)
+    jwthandler = JWTHandler()                
     return UserService(databaseops, authservice, keygen, jwthandler)
 
 
 def get_jwt_handler():
-    logger = SingletonLogger()
-    config = Config()
-    return JWTHandler(config, logger)
+    return JWTHandler()                        
 
 
 def get_file_service():
     db_ops = DatabaseOperations()
     keyhandler = KeyHandler(db_ops)
-    config = Config()
-    return fileOperations(dboperations=db_ops, keyhandler=keyhandler, config=config)
+    return fileOperations(dboperations=db_ops, keyhandler=keyhandler)
 
 
 def get_encryption_service():
     db_ops = DatabaseOperations()
     keygen = KeyHandler(db_ops)
-    file_ops = fileOperations(db_ops, keygen, Config())
+    file_ops = fileOperations(db_ops, keygen)
     return EncryptionService(keyhandler=keygen, fileoperations=file_ops)
 
 
 def get_file_manager():
     db_ops = DatabaseOperations()
     keyhandler = KeyHandler(db_ops)
-    config = Config()
-    return fileManager(
-        db=None,
-        db_ops=db_ops,
-        keyhandler = keyhandler,
-        config=config)
+    return fileManager(db_ops=db_ops, keyhandler=keyhandler)
 
 
 def get_task_service():

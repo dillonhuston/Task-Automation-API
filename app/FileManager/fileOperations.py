@@ -4,31 +4,28 @@ from datetime import datetime
 from fastapi import UploadFile, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.config import Config
+from app.settings import settings
 from app.dependencies.constants import MAX_UPLOAD_SIZE_MB
 from app.schemas.file import Downloadfile
 from app.Database.DatabaseOperations import DatabaseOperations
 from app.Encryption.encryptionService import EncryptionService
 from app.Encryption.keyGenerator import KeyHandler
 from app.utils.logger import SingletonLogger
-from app.exceptions.exceptions import FileError,  AuthenticationError, FileProcessingError
-
+from app.exceptions.exceptions import FileError, AuthenticationError, FileProcessingError
 
 logger = SingletonLogger().get_logger()
 
 
 class fileOperations:
-    def __init__(self, dboperations: DatabaseOperations, keyhandler: KeyHandler, config: Config):
+    def __init__(self, dboperations: DatabaseOperations, keyhandler: KeyHandler):
         self.dboperation = dboperations
-        self.config = config
         self.keyhandler = keyhandler
-        # removed self.fileoperations reference
         self.encryptionservice = EncryptionService(self.keyhandler, self)
 
     async def save_file(self, file: UploadFile, user_id: str) -> tuple[str, str]:
         try:
             filename = f"{user_id}_{datetime.now():%Y-%m-%d_%H-%M-%S}_{file.filename}"
-            upload_dir = os.path.join(self.config.BASE_DIR, "tmp/uploads")
+            upload_dir = os.path.join(settings.BASE_DIR, "tmp/uploads")
             os.makedirs(upload_dir, exist_ok=True)
             file_path = os.path.join(upload_dir, filename)
 
@@ -39,22 +36,16 @@ class fileOperations:
             await file.seek(0)
             logger.info("File saved: %s at %s", filename, file_path)
             return filename, file_path
-        
         except FileError:
             raise
-
         except Exception as exc:
             logger.exception("Error saving file: %s", exc)
-            raise FileProcessingError(detail="Failed to save file to the path provided]")
+            raise FileProcessingError(detail="Failed to save file to the path provided")
 
-            
     async def validate_file(self, file: UploadFile) -> None:
         try:
-            # we should instead read the whole file content to check size
             data = await file.read()
             size_bytes = len(data)
-
-            # then we reset the pointer
             await file.seek(0)
 
             size_mb = size_bytes / (1024 * 1024)
@@ -72,7 +63,7 @@ class fileOperations:
     async def list_files(self, db: AsyncSession, user_id: str):
         files = await self.dboperation.ReturnUserFiles(db, user_id)
         if not files:
-            return []  
+            return []
         return [
             {
                 "id": f.id,
@@ -87,12 +78,11 @@ class fileOperations:
         try:
             file = await self.dboperation.GetFileByID(db, file_id)
         except FileError:
-            raise 
+            raise
         except Exception as e:
-            logger.warning(f"No file available for user: {e}", user_id)
+            logger.warning("No file available for user %s: %s", user_id, e)
             raise FileError(detail="No file found for the current user")
 
-        # Read encrypted file
         encrypted_data = await self.read_file(file.file_path)
         nonce = encrypted_data[:12]
         ciphertext = encrypted_data[12:]
@@ -132,6 +122,5 @@ class fileOperations:
                 return f.write(encrypted_bytes)
         except FileProcessingError:
             raise
-
         except Exception as e:
             raise FileProcessingError(f"Failed to write data to path")
