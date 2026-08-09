@@ -74,7 +74,6 @@ class KeyHandler:
             return bytes.fromhex(key_hex)
 
         # stored is now the encrypted base64 string
-        # We'll try to decrypt; if it fails, assume it's plain hex (migration scenario)
         try:
             return self._decrypt_key(stored)
         except Exception as e:
